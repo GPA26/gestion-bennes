@@ -296,11 +296,7 @@
         <label>Demandeur</label>
         <input type="text" id="demandeur" placeholder="Votre prénom / nom" />
 
-        <label>Validateur</label>
-        <select id="validateur">
-          <option value="adrien.inard@groupe-gpa.fr">Adrien</option>
-          <option value="julien.morichon@groupe-gpa.fr">Julien</option>
-        </select>
+        <!-- validateur fixe: Adrien TO, Julien CC -->
       </div>
       <div class="btn-row">
         <button class="btn btn-secondary" onclick="goStep(1)">← Retour</button>
@@ -313,7 +309,7 @@
       <div class="card">
         <h2>📧 Aperçu de la demande</h2>
         <div class="alert alert-info">
-          Ce message sera envoyé au validateur (Adrien ou Julien) pour approbation avant transmission au prestataire.
+          Ce message sera envoyé à Adrien (avec Julien en copie) pour transfert à Paprec.
         </div>
         <div class="email-meta">
           <strong>À :</strong> <span id="previewTo"></span><br>
@@ -468,9 +464,6 @@ function goStep(n) {
 }
 
 function buildPreview() {
-  const validateur = document.getElementById('validateur');
-  const valName = validateur.options[validateur.selectedIndex].text;
-  const valEmail = validateur.value;
   const demandeur = document.getElementById('demandeur').value || 'Le cariste';
 
   const benneLines = [...selected].map(id => {
@@ -478,11 +471,11 @@ function buildPreview() {
     return `  • ${b.id} – ${b.label} – ${urgency}`;
   }).join('\n');
 
-  document.getElementById('previewTo').textContent = `${valName} <${valEmail}>`;
+  document.getElementById('previewTo').textContent = `Adrien Inard <adrien.inard@groupe-gpa.fr> (CC: Julien Morichon)`;
 
-  const body = `Bonjour ${valName},
+  const body = `Bonjour,
 
-${demandeur} souhaite faire évacuer la/les benne(s) suivante(s) selon notre contrat (ref client : GPA 6210) :
+Le cariste souhaite faire évacuer la/les benne(s) suivante(s) selon notre contrat (ref client : GPA 6210) :
 
 ${benneLines}
 
@@ -491,23 +484,19 @@ Merci de valider cette demande pour qu'elle soit transmise au prestataire.
 Pour rappel, nos horaires d'ouverture pour l'accueil de vos chauffeurs sont les suivants :
 08h30 – 12h00 / 14h00 – 16h30
 
-Cordialement,
-${demandeur}`;
+Cordialement,`;
 
   document.getElementById('previewBody').textContent = body;
 }
 
 function submitRequest() {
-  const validateur = document.getElementById('validateur');
-  const valName = validateur.options[validateur.selectedIndex].text;
-  const valEmail = validateur.value;
   const demandeur = document.getElementById('demandeur').value || 'Le cariste';
 
   const req = {
     id: Date.now(),
     date: new Date().toLocaleString('fr-FR'),
     demandeur,
-    validateur: { name: valName, email: valEmail },
+    validateur: { name: 'Adrien', email: 'adrien.inard@groupe-gpa.fr' },
     bennes: [...selected].map(id => BENNES.find(x => x.id === id)),
     urgency,
     status: 'pending'
@@ -516,25 +505,26 @@ function submitRequest() {
   requests.unshift(req);
   saveRequests();
 
-  // Build mailto for validateur
   const benneLines = req.bennes.map(b => `- ${b.id} – ${b.label} – ${urgency}`).join('\n');
   const body = encodeURIComponent(
-`Bonjour ${valName},
+`Bonjour,
 
-${demandeur} souhaite faire évacuer la/les benne(s) suivante(s) selon notre contrat (ref client : GPA 6210) :
+Le cariste souhaite faire évacuer la/les benne(s) suivante(s) selon notre contrat (ref client : GPA 6210) :
 
 ${benneLines}
 
-Merci de valider cette demande.
-Pour valider, allez sur l'application et cliquez sur "Valider".
+Merci de valider cette demande pour qu'elle soit transmise au prestataire.
 
-Pour rappel, horaires d'ouverture : 08h30 – 12h00 / 14h00 – 16h30
+Pour rappel, nos horaires d'ouverture pour l'accueil de vos chauffeurs sont les suivants :
+08h30 – 12h00 / 14h00 – 16h30
 
-Cordialement, ${demandeur}`
+Cordialement,`
   );
 
-  const subject = encodeURIComponent(`[Validation requise] Évacuation bennes – GPA 6210`);
-  window.open(`mailto:${valEmail}?subject=${subject}&body=${body}`);
+  const subject = encodeURIComponent(`Évacuation bennes – GPA 6210`);
+  const to = 'adrien.inard@groupe-gpa.fr';
+  const cc = 'julien.morichon@groupe-gpa.fr';
+  window.open(`mailto:${to}?cc=${cc}&subject=${subject}&body=${body}`);
 
   document.getElementById('step3').style.display = 'none';
   document.getElementById('step4').style.display = 'block';
