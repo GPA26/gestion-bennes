@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Évacuation Bennes – PSM</title>
+<style>
+  :root {
+    --black: #1a1a1a;
+    --yellow: #F5C000;
+    --yellow-dark: #D4A800;
+    --yellow-pale: #FFF8DC;
+    --grey: #6b6b6b;
+    --grey-light: #f2f2f2;
+    --white: #ffffff;
+    --green: #2d7a4f;
+    --green-pale: #e8f5ee;
+    --red: #c0392b;
+    --red-pale: #fdecea;
+    --radius: 10px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--grey-light);
+    color: var(--black);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--black);
+    color: var(--white);
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 4px solid var(--yellow);
+  }
+
+  .logo-circle {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--yellow);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 900; color: var(--black);
+    flex-shrink: 0;
+  }
+
+  header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; }
+  header p  { font-size: 0.8rem; color: #aaa; margin-top: 2px; }
+
+  .container { max-width: 700px; margin: 0 auto; padding: 28px 16px 60px; }
+
+  /* STEP TABS */
+  .steps {
+    display: flex; gap: 0; margin-bottom: 28px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    background: var(--white);
+  }
+  .step-tab {
+    flex: 1; padding: 14px 8px; text-align: center;
+    font-size: 0.78rem; font-weight: 600; color: var(--grey);
+    border-bottom: 3px solid transparent;
+    transition: all .2s;
+    cursor: default;
+  }
+  .step-tab.active   { color: var(--black); border-color: var(--yellow); background: var(--yellow-pale); }
+  .step-tab.done     { color: var(--green); border-color: var(--green); }
+  .step-tab span { display: block; font-size: 1.1rem; margin-bottom: 2px; }
+
+  /* CARDS */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 16px; color: var(--black); }
+
+  /* BENNE SELECTOR */
+  .benne-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .benne-btn {
+    border: 2px solid #ddd;
+    background: var(--white);
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: all .15s;
+    position: relative;
+  }
+  .benne-btn:hover { border-color: var(--yellow); background: var(--yellow-pale); }
+  .benne-btn.selected {
+    border-color: var(--yellow);
+    background: var(--yellow-pale);
+    box-shadow: 0 0 0 2px var(--yellow);
+  }
+  .benne-btn .num { font-size: 0.72rem; font-weight: 700; color: var(--grey); }
+  .benne-btn .label { font-size: 0.85rem; font-weight: 600; margin-top: 2px; line-height: 1.3; }
+  .benne-btn .check {
+    position: absolute; top: 8px; right: 8px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--yellow); color: var(--black);
+    font-size: 12px; font-weight: 900;
+    display: none; align-items: center; justify-content: center;
+  }
+  .benne-btn.selected .check { display: flex; }
+
+  /* SELECTED LIST */
+  .selected-list { list-style: none; }
+  .selected-list li {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--yellow-pale);
+    border: 1px solid var(--yellow);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 0.88rem; font-weight: 600;
+  }
+  .selected-list li button {
+    background: none; border: none; cursor: pointer;
+    color: var(--red); font-size: 1rem; padding: 0 4px;
+    font-weight: 900; line-height: 1;
+  }
+
+  /* URGENCY */
+  .urgency-group { display: flex; gap: 10px; flex-wrap: wrap; }
+  .urgency-btn {
+    border: 2px solid #ddd; background: var(--white);
+    border-radius: 6px; padding: 8px 18px;
+    cursor: pointer; font-size: 0.85rem; font-weight: 600;
+    transition: all .15s;
+  }
+  .urgency-btn.selected { border-color: var(--yellow); background: var(--yellow-pale); box-shadow: 0 0 0 2px var(--yellow); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 24px; border-radius: 8px; border: none;
+    font-size: 0.92rem; font-weight: 700; cursor: pointer;
+    transition: all .15s; text-decoration: none;
+  }
+  .btn-primary { background: var(--yellow); color: var(--black); }
+  .btn-primary:hover { background: var(--yellow-dark); }
+  .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-secondary { background: var(--grey-light); color: var(--black); border: 1px solid #ccc; }
+  .btn-secondary:hover { background: #e5e5e5; }
+  .btn-green { background: var(--green); color: var(--white); }
+  .btn-green:hover { background: #235f3c; }
+  .btn-red { background: var(--red); color: var(--white); }
+  .btn-red:hover { background: #9c2d22; }
+
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+
+  /* EMAIL PREVIEW */
+  .email-box {
+    background: #fafafa;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 18px;
+    font-size: 0.84rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    font-family: 'Courier New', monospace;
+    margin-bottom: 16px;
+    color: var(--black);
+  }
+  .email-meta { font-size: 0.78rem; color: var(--grey); margin-bottom: 14px; }
+  .email-meta strong { color: var(--black); }
+
+  /* VALIDATOR VIEW */
+  .request-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 18px;
+    margin-bottom: 14px;
+    background: var(--white);
+  }
+  .request-card .meta { font-size: 0.78rem; color: var(--grey); margin-bottom: 10px; }
+  .request-card .bennes-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .tag {
+    background: var(--yellow-pale); border: 1px solid var(--yellow);
+    border-radius: 4px; padding: 3px 10px; font-size: 0.78rem; font-weight: 600;
+  }
+  .status-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .badge-pending { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+  .badge-approved { background: var(--green-pale); color: var(--green); border: 1px solid var(--green); }
+  .badge-rejected { background: var(--red-pale); color: var(--red); border: 1px solid var(--red); }
+
+  /* SUCCESS */
+  .success-block {
+    text-align: center; padding: 32px;
+  }
+  .success-icon { font-size: 3rem; margin-bottom: 14px; }
+  .success-block h2 { font-size: 1.2rem; margin-bottom: 8px; }
+  .success-block p { color: var(--grey); font-size: 0.9rem; }
+
+  /* TABS */
+  .view-tabs { display: flex; gap: 0; margin-bottom: 20px; border-radius: 8px; overflow: hidden; background: var(--white); box-shadow: var(--shadow); }
+  .view-tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: var(--grey); border-bottom: 3px solid transparent; transition: all .15s; }
+  .view-tab.active { color: var(--black); border-color: var(--yellow); background: var(--yellow-pale); }
+
+  /* ALERT */
+  .alert { border-radius: 8px; padding: 12px 16px; font-size: 0.85rem; margin-bottom: 14px; }
+  .alert-info { background: #e8f0ff; color: #1a3c8f; border: 1px solid #b0c4f5; }
+  .alert-success { background: var(--green-pale); color: var(--green); border: 1px solid var(--green); }
+
+  select, input[type=text] {
+    width: 100%; border: 1.5px solid #ccc; border-radius: 6px;
+    padding: 9px 12px; font-size: 0.88rem; color: var(--black);
+    background: var(--white); outline: none; transition: border .15s;
+    margin-top: 6px;
+  }
+  select:focus, input[type=text]:focus { border-color: var(--yellow); }
+  label { font-size: 0.82rem; font-weight: 600; color: var(--grey); display: block; margin-top: 14px; }
+
+  @media(max-width:500px){
+    .benne-grid { grid-template-columns: 1fr 1fr; }
+    header h1 { font-size: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-circle">♻</div>
+  <div>
+    <h1>Demande d'évacuation de bennes</h1>
+    <p>Ref client : GPA 6210</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- VIEW TOGGLE -->
+  <div class="view-tabs">
+    <div class="view-tab active" onclick="switchView('cariste')">🚛 Cariste</div>
+    <div class="view-tab" onclick="switchView('validateur')">✅ Validateur</div>
+  </div>
+
+  <!-- ===== VUE CARISTE ===== -->
+  <div id="view-cariste">
+
+    <!-- STEP TABS -->
+    <div class="steps">
+      <div class="step-tab active" id="tab1"><span>1</span>Sélection</div>
+      <div class="step-tab" id="tab2"><span>2</span>Détails</div>
+      <div class="step-tab" id="tab3"><span>3</span>Confirmation</div>
+    </div>
+
+    <!-- STEP 1: Selection -->
+    <div id="step1">
+      <div class="card">
+        <h2>📦 Sélectionnez les bennes à évacuer</h2>
+        <div class="benne-grid" id="benneGrid"></div>
+      </div>
+
+      <div class="card" id="selectionCard" style="display:none">
+        <h2>✅ Bennes sélectionnées</h2>
+        <ul class="selected-list" id="selectedList"></ul>
+      </div>
+
+      <div style="text-align:right">
+        <button class="btn btn-primary" id="btnStep1" onclick="goStep(2)" disabled>
+          Continuer →
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Details -->
+    <div id="step2" style="display:none">
+      <div class="card">
+        <h2>⚙️ Détails de la demande</h2>
+
+        <label>Urgence</label>
+        <div class="urgency-group" style="margin-top:8px">
+          <button class="urgency-btn selected" onclick="selectUrgency(this,'Dès que possible')">Dès que possible</button>
+          <button class="urgency-btn" onclick="selectUrgency(this,'Cette semaine')">Cette semaine</button>
+          <button class="urgency-btn" onclick="selectUrgency(this,'Urgent – sous 24h')">Urgent – sous 24h</button>
+        </div>
+
+        <label>Demandeur</label>
+        <input type="text" id="demandeur" placeholder="Votre prénom / nom" />
+
+        <label>Validateur</label>
+        <select id="validateur">
+          <option value="adrien.inard@groupe-gpa.fr">Adrien</option>
+          <option value="julien.morichon@groupe-gpa.fr">Julien</option>
+        </select>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(1)">← Retour</button>
+        <button class="btn btn-primary" onclick="goStep(3)">Prévisualiser →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Preview + Send -->
+    <div id="step3" style="display:none">
+      <div class="card">
+        <h2>📧 Aperçu de la demande</h2>
+        <div class="alert alert-info">
+          Ce message sera envoyé au validateur (Adrien ou Julien) pour approbation avant transmission au prestataire.
+        </div>
+        <div class="email-meta">
+          <strong>À :</strong> <span id="previewTo"></span><br>
+          <strong>Objet :</strong> Demande d'évacuation bennes – GPA 6210
+        </div>
+        <div class="email-box" id="previewBody"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(2)">← Retour</button>
+        <button class="btn btn-primary" onclick="submitRequest()">✉️ Envoyer au validateur</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Success -->
+    <div id="step4" style="display:none">
+      <div class="card">
+        <div class="success-block">
+          <div class="success-icon">✅</div>
+          <h2>Demande envoyée !</h2>
+          <p>Le validateur va recevoir votre demande et l'approuver avant envoi au prestataire.</p>
+          <div class="btn-row" style="justify-content:center; margin-top:20px">
+            <button class="btn btn-primary" onclick="resetCariste()">Nouvelle demande</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== VUE VALIDATEUR ===== -->
+  <div id="view-validateur" style="display:none">
+    <div class="card">
+      <h2>📋 Demandes en attente de validation</h2>
+      <div id="requestsList"></div>
+    </div>
+    <div class="card" style="background:#f9f9f9">
+      <h2>📜 Historique</h2>
+      <div id="historyList"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const BENNES = [
+  { id: '6002', label: 'Pneu' },
+  { id: '6003', label: 'Jante Aluminium' },
+  { id: '6004', label: 'Matière Plastique PP (pare-chocs)' },
+  { id: '6005', label: 'DIB Issue des VHU' },
+  { id: '6006', label: 'Platin carrosserie – Métaux ferreux' },
+  { id: '6007', label: 'Radiateur clim, traverse, plaque et capot Alu' },
+  { id: '6008', label: 'Ferrailles lourdes / Ferraille à broyer' },
+  { id: '6009', label: 'Radiateur Aluminium plastique' },
+  { id: '6010', label: 'Faisceaux cuivre' },
+  { id: '6011', label: 'Bois' },
+  { id: '6012', label: 'Pare-brise' },
+  { id: '6014', label: 'Poche PE (Film Plastique)' },
+  { id: '6015', label: 'Jante Tôle' },
+  { id: '6017', label: 'DIB Issue des VHU (bis)' },
+  { id: '6018', label: 'Platin carrosserie (bis)' },
+  { id: '6019', label: 'Moteur et Boîte Aluminium' },
+  { id: '6020', label: 'Ferrailles lourdes (bis)' },
+  { id: '6021', label: 'Moteur et Boîte fonte-Alu' },
+  { id: '6022', label: 'Carter Aluminium' },
+  { id: '6023', label: 'Carton' },
+];
+
+const PRESTATAIRE_EMAIL = 'logistique.dq@paprec.com';
+
+// ============================================================
+// STATE
+// ============================================================
+let selected = new Set();
+let urgency = 'Dès que possible';
+let currentStep = 1;
+let requests = JSON.parse(localStorage.getItem('psm_requests') || '[]');
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  const grid = document.getElementById('benneGrid');
+  BENNES.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'benne-btn';
+    btn.dataset.id = b.id;
+    btn.innerHTML = `
+      <div class="num">${b.id}</div>
+      <div class="label">${b.label}</div>
+      <div class="check">✓</div>
+    `;
+    btn.onclick = () => toggleBenne(b.id, btn);
+    grid.appendChild(btn);
+  });
+  renderSelectedList();
+  renderValidateur();
+}
+
+// ============================================================
+// CARISTE LOGIC
+// ============================================================
+function toggleBenne(id, btn) {
+  if (selected.has(id)) { selected.delete(id); btn.classList.remove('selected'); }
+  else { selected.add(id); btn.classList.add('selected'); }
+  renderSelectedList();
+  document.getElementById('btnStep1').disabled = selected.size === 0;
+}
+
+function renderSelectedList() {
+  const ul = document.getElementById('selectedList');
+  const card = document.getElementById('selectionCard');
+  ul.innerHTML = '';
+  if (selected.size === 0) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  selected.forEach(id => {
+    const b = BENNES.find(x => x.id === id);
+    const li = document.createElement('li');
+    li.innerHTML = `<span>🟡 ${b.id} – ${b.label}</span><button onclick="removeBenne('${id}')">✕</button>`;
+    ul.appendChild(li);
+  });
+}
+
+function removeBenne(id) {
+  selected.delete(id);
+  document.querySelectorAll('.benne-btn').forEach(btn => {
+    if (btn.dataset.id === id) btn.classList.remove('selected');
+  });
+  renderSelectedList();
+  document.getElementById('btnStep1').disabled = selected.size === 0;
+}
+
+function selectUrgency(btn, val) {
+  document.querySelectorAll('.urgency-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  urgency = val;
+}
+
+function goStep(n) {
+  document.getElementById('step' + currentStep).style.display = 'none';
+  currentStep = n;
+  document.getElementById('step' + n).style.display = 'block';
+  ['tab1','tab2','tab3'].forEach((t, i) => {
+    const el = document.getElementById(t);
+    el.classList.remove('active','done');
+    if (i + 1 < n) el.classList.add('done');
+    if (i + 1 === n) el.classList.add('active');
+  });
+  if (n === 3) buildPreview();
+}
+
+function buildPreview() {
+  const validateur = document.getElementById('validateur');
+  const valName = validateur.options[validateur.selectedIndex].text;
+  const valEmail = validateur.value;
+  const demandeur = document.getElementById('demandeur').value || 'Le cariste';
+
+  const benneLines = [...selected].map(id => {
+    const b = BENNES.find(x => x.id === id);
+    return `  • ${b.id} – ${b.label} – ${urgency}`;
+  }).join('\n');
+
+  document.getElementById('previewTo').textContent = `${valName} <${valEmail}>`;
+
+  const body = `Bonjour ${valName},
+
+${demandeur} souhaite faire évacuer la/les benne(s) suivante(s) selon notre contrat (ref client : GPA 6210) :
+
+${benneLines}
+
+Merci de valider cette demande pour qu'elle soit transmise au prestataire.
+
+Pour rappel, nos horaires d'ouverture pour l'accueil de vos chauffeurs sont les suivants :
+08h30 – 12h00 / 14h00 – 16h30
+
+Cordialement,
+${demandeur}`;
+
+  document.getElementById('previewBody').textContent = body;
+}
+
+function submitRequest() {
+  const validateur = document.getElementById('validateur');
+  const valName = validateur.options[validateur.selectedIndex].text;
+  const valEmail = validateur.value;
+  const demandeur = document.getElementById('demandeur').value || 'Le cariste';
+
+  const req = {
+    id: Date.now(),
+    date: new Date().toLocaleString('fr-FR'),
+    demandeur,
+    validateur: { name: valName, email: valEmail },
+    bennes: [...selected].map(id => BENNES.find(x => x.id === id)),
+    urgency,
+    status: 'pending'
+  };
+
+  requests.unshift(req);
+  saveRequests();
+
+  // Build mailto for validateur
+  const benneLines = req.bennes.map(b => `- ${b.id} – ${b.label} – ${urgency}`).join('\n');
+  const body = encodeURIComponent(
+`Bonjour ${valName},
+
+${demandeur} souhaite faire évacuer la/les benne(s) suivante(s) selon notre contrat (ref client : GPA 6210) :
+
+${benneLines}
+
+Merci de valider cette demande.
+Pour valider, allez sur l'application et cliquez sur "Valider".
+
+Pour rappel, horaires d'ouverture : 08h30 – 12h00 / 14h00 – 16h30
+
+Cordialement, ${demandeur}`
+  );
+
+  const subject = encodeURIComponent(`[Validation requise] Évacuation bennes – GPA 6210`);
+  window.open(`mailto:${valEmail}?subject=${subject}&body=${body}`);
+
+  document.getElementById('step3').style.display = 'none';
+  document.getElementById('step4').style.display = 'block';
+}
+
+function resetCariste() {
+  selected.clear();
+  document.querySelectorAll('.benne-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('demandeur').value = '';
+  document.getElementById('step4').style.display = 'none';
+  currentStep = 1;
+  document.getElementById('step1').style.display = 'block';
+  ['tab1','tab2','tab3'].forEach((t,i) => {
+    document.getElementById(t).classList.remove('active','done');
+    if (i===0) document.getElementById(t).classList.add('active');
+  });
+  document.getElementById('btnStep1').disabled = true;
+  renderSelectedList();
+}
+
+// ============================================================
+// VALIDATEUR LOGIC
+// ============================================================
+function renderValidateur() {
+  const pending = requests.filter(r => r.status === 'pending');
+  const done = requests.filter(r => r.status !== 'pending');
+
+  const listEl = document.getElementById('requestsList');
+  const histEl = document.getElementById('historyList');
+
+  if (pending.length === 0) {
+    listEl.innerHTML = '<p style="color:#999;font-size:.85rem">Aucune demande en attente.</p>';
+  } else {
+    listEl.innerHTML = pending.map(r => requestCardHTML(r, true)).join('');
+  }
+
+  if (done.length === 0) {
+    histEl.innerHTML = '<p style="color:#999;font-size:.85rem">Aucun historique.</p>';
+  } else {
+    histEl.innerHTML = done.map(r => requestCardHTML(r, false)).join('');
+  }
+}
+
+function requestCardHTML(r, showActions) {
+  const badges = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
+  const labels = { pending: 'En attente', approved: 'Approuvée', rejected: 'Refusée' };
+  const tags = r.bennes.map(b => `<span class="tag">${b.id} – ${b.label}</span>`).join('');
+  const actions = showActions ? `
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-green" style="padding:8px 16px;font-size:.82rem" onclick="validateRequest(${r.id})">✅ Valider & envoyer</button>
+      <button class="btn btn-red" style="padding:8px 16px;font-size:.82rem" onclick="rejectRequest(${r.id})">✕ Refuser</button>
+    </div>` : '';
+  return `<div class="request-card">
+    <div class="meta">
+      <strong>${r.demandeur}</strong> · ${r.date} · Urgence : <strong>${r.urgency}</strong>
+      &nbsp;<span class="status-badge ${badges[r.status]}">${labels[r.status]}</span>
+    </div>
+    <div class="bennes-tags">${tags}</div>
+    ${actions}
+  </div>`;
+}
+
+function validateRequest(id) {
+  const req = requests.find(r => r.id === id);
+  if (!req) return;
+  req.status = 'approved';
+  saveRequests();
+  renderValidateur();
+
+  // Send email to prestataire
+  const benneLines = req.bennes.map(b => `- ${b.id} – ${b.label} – ${req.urgency}`).join('\n');
+  const body = encodeURIComponent(
+`Bonjour,
+
+Je souhaiterais faire évacuer la/les benne(s) suivante(s) selon notre contrat (ref client : GPA 6210) :
+
+${benneLines}
+
+Pour rappel, nos horaires d'ouverture pour l'accueil de vos chauffeurs sont les suivants :
+08h30 – 12h00 / 14h00 – 16h30
+
+Merci de me confirmer la prise en compte de ma demande.
+
+Cordialement,
+${req.demandeur}`
+  );
+  const subject = encodeURIComponent(`Demande d'évacuation bennes – GPA 6210`);
+  window.open(`mailto:${PRESTATAIRE_EMAIL}?subject=${subject}&body=${body}`);
+}
+
+function rejectRequest(id) {
+  const req = requests.find(r => r.id === id);
+  if (!req) return;
+  req.status = 'rejected';
+  saveRequests();
+  renderValidateur();
+}
+
+function saveRequests() {
+  localStorage.setItem('psm_requests', JSON.stringify(requests));
+}
+
+// ============================================================
+// VIEW SWITCH
+// ============================================================
+function switchView(view) {
+  document.getElementById('view-cariste').style.display = view === 'cariste' ? 'block' : 'none';
+  document.getElementById('view-validateur').style.display = view === 'validateur' ? 'block' : 'none';
+  document.querySelectorAll('.view-tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && view === 'cariste') || (i === 1 && view === 'validateur'));
+  });
+  if (view === 'validateur') renderValidateur();
+}
+
+init();
+</script>
+</body>
+</html>
